@@ -1,0 +1,483 @@
+import tkinter as tk
+import random as rand
+import datetime
+import time
+
+text_color = "white"
+text_font = "courier"
+foreground = "white"
+background = "black"
+text_size = 16
+fullscreen = False
+
+Data_Types = ["Left Aileron Deflection",
+              "Right Aileron Deflection",
+              "Rudder Deflection",
+              "Elevator Deflection",
+              "Roll",
+              "Pitch",
+              "Yaw",
+              "Yoke Force",
+              "Rudder Force",
+              "Angle of Attack",
+              "Angle of Side Slip",
+              "Laser Altitude"]
+
+Data_Types_Text = ["Left Aileron Deflection (deg)",
+                   "Right Aileron Deflection (deg)",
+                   "Rudder Deflection (deg)",
+                   "Elevator Deflection (deg)",
+                   "Roll Angle (deg)",
+                   "Pitch Angle (deg)",
+                   "Yaw Angle (deg)",
+                   "Yoke Force (lbs)",
+                   "Rudder Force (lbs)",
+                   "Angle of Attack (deg)",
+                   "Side Slip Angle (deg)",
+                   "Laser Altitude (m)"]
+
+class window_configure:
+    def __init__(self,parent):
+        parent.configure(bg = background)
+        parent.attributes("-fullscreen",fullscreen)
+        #parent.geometry("1920x1080")
+
+class frames():
+    def __init__(self,parent):
+        self.select = True
+        self.on_val = "on"
+        self.off_val = "off"
+        ##FRAME 1=======================================================================================================
+        self.select_frame = tk.Frame(parent,
+            bg = background)
+        self.select_frame.grid(row = 1, column = 1)
+
+        Data_Header = tk.Label(self.select_frame,
+            text = "Select Data to display",
+            font = (text_font,text_size),
+            width = 32,
+            fg = foreground,
+            bg = "grey20",
+                               bd = 5,
+                               relief = tk.SUNKEN)
+        Data_Header.grid(row = 0, column = 1, pady = 10)
+
+        row = 2
+        col = 1
+        length = len(Data_Types)
+        count = 0
+
+        for ii in range(0,len(Data_Types)):
+            Data_Types[ii] = tk.Checkbutton(self.select_frame,
+                bg=background,
+                fg=background,
+                text=Data_Types[ii],
+                font=(text_font, text_size),
+                onvalue = self.on_val,
+                offvalue = self.off_val,
+                relief = tk.SUNKEN,
+                highlightcolor = foreground,
+                highlightbackground = background,
+                activeforeground = "grey30",
+                activebackground = background,
+                variable = Check_Val[count],
+                width = 30,
+                anchor = 'w')
+            Data_Types[ii].grid(row=row, column=col)
+            row += 1
+            count += 1
+
+        for ii in range(0, len(Check_Val)):
+            Check_Val[ii].set("on")
+
+        for ii in range(0, len(Check_Val)):
+            if Check_Val[ii].get() == "off":
+                Data_Types[ii].configure(bg="red",relief = tk.RAISED)
+            if Check_Val[ii].get() == "on":
+                Data_Types[ii].configure(bg="green",relief = tk.SUNKEN)
+        self.select_frame.update()
+
+        self.Button_change1 = tk.Button(self.select_frame,
+            bg = "grey20",
+            fg = foreground,
+            text = "Continue to Data Display",
+            command = self.change_display,
+            font = (text_font, text_size),
+            width = 31)
+        self.Button_change1.grid(row = row+1, column = 1, pady = 10)
+
+        self.toggle = True
+        self.selection = tk.Button(self.select_frame,
+            bg = "forest green",
+            fg = foreground,
+            text = "De-Select All",
+            font = (text_font,text_size),
+            width = 32,
+            command = self.select_all)
+        self.selection.grid(row = row,column = 1, pady = 10)
+
+        while self.select:
+            for ii in range(0,len(Check_Val)):
+                if Check_Val[ii].get() == "off":
+                    Data_Types[ii].configure(bg = "maroon",relief = tk.RAISED)
+                if Check_Val[ii].get() == "on":
+                    Data_Types[ii].configure(bg = "green",relief = tk.SUNKEN)
+            self.select_frame.update()
+
+    def change_display(self):
+        if self.select:
+            self.select_frame.grid_forget()
+            self.select = False
+
+    def select_all(self):
+        if self.toggle:
+            self.toggle = False
+            self.selection.configure(bg = "red",text = "Select All")
+            for ii in range(0,len(Check_Val)):
+                Check_Val[ii].set("off")
+        else:
+            self.toggle = True
+            self.selection.configure(bg = "forest green", text = "De Select All")
+            for ii in range(0,len(Check_Val)):
+                Check_Val[ii].set("on")
+
+class display():
+    def __init__(self, parent):
+        self.scroll = True
+        row = 0
+        col = 1
+        width1 = 35
+        width2 = 15
+        self.header1 = tk.Label(parent,
+            text="Live Data",
+            bg=background,
+            fg=foreground,
+            width=width2,
+            font=(text_font, text_size),
+            anchor='w')
+        self.header1.grid(row = row,column = 2)
+        self.header2 = tk.Label(parent,
+            text="Data Snapshot",
+            bg=background,
+            fg=foreground,
+            width=width2,
+            font=(text_font, text_size),
+            anchor='w')
+        self.header2.grid(row=row, column=3)
+        row+=1
+        self.data_header = tk.Label(parent,
+            text = "Time:",
+            bg = background,
+            fg = foreground,
+            width = width1,
+            font = (text_font,text_size),
+            anchor = 'w')
+        self.data_header.grid(row = row,column = col)
+        self.live_header = tk.Label(parent,
+            textvariable = current_time,
+            bg=background,
+            fg=foreground,
+            width = width2,
+            font=(text_font, text_size),
+            anchor='w',
+            bd=5,
+            relief=tk.SUNKEN)
+        self.live_header.grid(row=row, column= col + 1)
+        self.record_header = tk.Label(parent,
+            text="Data Type",
+            bg=background,
+            fg=foreground,
+            width = width2,
+            font=(text_font, text_size),
+            anchor='w',
+            bd=5,
+            relief=tk.SUNKEN)
+        self.record_header.grid(row=row, column= col + 2)
+        row+=1
+        for ii in range(0,len(Data_Types_Text)):
+            if Check_Val[ii].get() == "on":
+                #Variable Names
+                Data_Types_Text[ii] = tk.Label(parent,
+                    text = str(Data_Types_Text[ii] + ":"),
+                    width = width1,
+                    font = (text_font,text_size),
+                    bg = background,
+                                               height = 1,
+                    foreground = "white",
+                    anchor = 'w')
+                Data_Types_Text[ii].grid(row = row,column = col)
+
+                #Variable Live Values
+                label_names[ii] = tk.Label(parent,
+                    textvariable = display_variables[ii],
+                    width = width2,
+                    font = (text_font,text_size),
+                    bg = background,
+                    foreground = "white",
+                    relief = tk.SUNKEN,
+                    anchor = 'w',
+                    bd = 5)
+                label_names[ii].grid(row = row,column = col+1, padx = 3)
+
+                #Variable Stored Values
+                label_names[ii] = tk.Label(parent,
+                    textvariable=display_variables_store[ii],
+                    width=width2,
+                    font=(text_font, text_size),
+                    bg=background,
+                    foreground="white",
+                    relief = tk.SUNKEN,
+                    anchor='w',
+                    bd = 5)
+                label_names[ii].grid(row=row, column=col + 2,padx = 3)
+
+                #listbox
+                row+=1
+
+        self.listbox_header = tk.Label(parent,
+            text = "Recorded Data",
+            font = (text_font,text_size),
+            bg= "grey20",
+            fg = foreground,
+            relief = tk.SUNKEN,
+            width = 34,
+            bd = 10)
+        self.listbox_header.grid(row = 0, column = col+3)
+
+        self.mylistbox = tk.Listbox(parent,
+            bg = background,
+            fg = foreground,
+            width = 40,
+            height = 30,
+            font = (text_font, 14),
+            bd = 10)
+        self.mylistbox.place(x=888,y=45,relheight = 0.95)
+        #self.mylistbox.grid(row = 1, rowspan = row, column = col + 3, sticky = "ne")
+        self.mylistbox.bind('<Enter>', self.disable_autoscroll)
+        self.scroll = tk.Scrollbar(parent,
+            command=self.mylistbox.yview,
+            orient = "vertical",
+            width = 80)
+        self.scroll.place(x=1351,y=45,relheight = 0.95)
+        #self.scroll.grid(row = 1, rowspan = row, column = col + 4,sticky = tk.N+tk.S)
+        
+
+        self.save_button = tk.Button(parent,
+            text = "Record Data",
+            font = (text_font,text_size),
+            bg = "maroon",
+            activebackground = "green",
+            fg = "black",
+            width = 65,
+            height = 2,
+            bd = 10)
+        self.save_button.grid(row = row, column = 1, columnspan = 3)
+        self.save_button.bind('<Button-1>', self.record_data)
+        self.save_button.bind('<Leave>', self.mouse_not_over)
+        self.save_button.bind('<Enter>', self.mouse_over)
+
+        current_time_string = datetime.datetime.now()
+        edit_time_string = current_time_string.strftime("%H:%M:%S:%f")
+        final_time = edit_time_string[0:11]
+        current_time.set(final_time)
+
+        while True:
+            #time update
+            current_time_string = datetime.datetime.now()
+            edit_time_string = current_time_string.strftime("%H:%M:%S:%f")
+            final_time = edit_time_string[0:11]
+            current_time.set(final_time)
+
+            #variable update
+            #Left Aileron
+            left_ail_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            left_ail_angle.set(str('{0:9.4f}'.format(left_ail_angle.get() + float(left_ail_val))))
+
+            #Right Aileron
+            right_ail_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            right_ail_angle.set(str('{0:9.4f}'.format(right_ail_angle.get() + float(right_ail_val))))
+
+            #Rudder
+            rud_angle_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            rud_angle.set(str('{0:9.4f}'.format(rud_angle.get() + float(rud_angle_val))))
+
+            #Elevator
+            ele_angle_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            ele_angle.set(str('{0:9.4f}'.format(ele_angle.get() + float(ele_angle_val))))
+
+            #Roll
+            roll_angle_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            roll_angle.set(str('{0:9.4f}'.format(roll_angle.get() + float(roll_angle_val))))
+
+            #Pitch
+            pitch_angle_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            pitch_angle.set(str('{0:9.4f}'.format(pitch_angle.get() + float(pitch_angle_val))))
+
+            #Yaw
+            yaw_angle_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            yaw_angle.set(str('{0:9.4f}'.format(yaw_angle.get() + float(yaw_angle_val))))
+
+            #Yoke Force
+            yoke_force_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            yoke_force.set(str('{0:9.4f}'.format(yoke_force.get() + float(yoke_force_val))))
+
+            #Rudder Force
+            rudder_force_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            rudder_force.set(str('{0:9.4f}'.format(rudder_force.get() + float(rudder_force_val))))
+
+            #Angle of Attack
+            angle_of_att_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            angle_of_att.set(str('{0:9.4f}'.format(angle_of_att.get() + float(angle_of_att_val))))
+
+            #Angle of Sideslip
+            side_slip_angle_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            side_slip_angle.set(str('{0:9.4f}'.format(side_slip_angle.get() + float(side_slip_angle_val))))
+
+            #Laser Altitude
+            laser_alt_val = "{0:9.5f}".format(rand.uniform(-0.1, 0.1))
+            laser_altitude.set(str('{0:9.4f}'.format(laser_altitude.get() + float(laser_alt_val))))
+
+            if self.scroll:
+                self.mylistbox.see("end")
+
+            time.sleep(0.25)
+            parent.update()
+
+    def mouse_not_over(self,event):
+        self.save_button.configure(bg = "maroon")
+
+    def mouse_over(self,event):
+        self.save_button.configure(bg="green")
+
+    def record_data(self,event):
+        n = self.mylistbox.size()
+        current_time_string = datetime.datetime.now()
+        edit_time_string = current_time_string.strftime("%H:%M:%S:%f")
+        final_time = edit_time_string[0:11]
+        self.mylistbox.insert(tk.END,final_time)
+        self.record_header.configure(text = str(final_time))
+        self.mylistbox.itemconfig(n, {'bg': 'grey20'})
+        self.scroll = True
+
+        for ii in range(0, len(Data_Types_Text)):
+            if Check_Val[ii].get() == "on":
+                display_variables_store[ii].set(display_variables[ii].get())
+                self.mylistbox.insert(tk.END,
+                    (str("   " + Listbox_display[ii]) + "   " + str(display_variables_store[ii].get())))
+
+    def disable_autoscroll(self,event):
+        self.scroll = False
+
+if __name__ == "__main__":
+    main = tk.Tk()
+    main_configure = window_configure(main)
+
+#declaring checkbox variables
+    LAD_check = tk.StringVar()
+    RAD_check = tk.StringVar()
+    RD_check = tk.StringVar()
+    ED_check = tk.StringVar()
+    R_check = tk.StringVar()
+    P_check = tk.StringVar()
+    Y_check = tk.StringVar()
+    YF_check = tk.StringVar()
+    RF_check = tk.StringVar()
+    AOA_check = tk.StringVar()
+    AOS_check = tk.StringVar()
+    LA_check = tk.StringVar()
+    Check_Val = [LAD_check,
+                 RAD_check,
+                 RD_check,
+                 ED_check,
+                 R_check,
+                 P_check,
+                 Y_check,
+                 YF_check,
+                 RF_check,
+                 AOA_check,
+                 AOS_check,
+                 LA_check]
+    create_frames = frames(main)
+
+#declaring display variables
+    left_ail_angle = tk.DoubleVar()
+    right_ail_angle = tk.DoubleVar()
+    rud_angle = tk.DoubleVar()
+    ele_angle = tk.DoubleVar()
+    roll_angle = tk.DoubleVar()
+    pitch_angle = tk.DoubleVar()
+    yaw_angle = tk.DoubleVar()
+    yoke_force = tk.DoubleVar()
+    rudder_force = tk.DoubleVar()
+    angle_of_att = tk.DoubleVar()
+    side_slip_angle = tk.DoubleVar()
+    laser_altitude = tk.DoubleVar()
+    display_variables = [left_ail_angle,
+                         right_ail_angle,
+                         rud_angle,
+                         ele_angle,
+                         roll_angle,
+                         pitch_angle,
+                         yaw_angle,
+                         yoke_force,
+                         rudder_force,
+                         angle_of_att,
+                         side_slip_angle,
+                         laser_altitude]
+
+#declaring storing variables
+    left_ail_angle_store = tk.DoubleVar()
+    right_ail_angle_store = tk.DoubleVar()
+    rud_angle_store = tk.DoubleVar()
+    ele_angle_store = tk.DoubleVar()
+    roll_angle_store = tk.DoubleVar()
+    pitch_angle_store = tk.DoubleVar()
+    yaw_angle_store = tk.DoubleVar()
+    yoke_force_store = tk.DoubleVar()
+    rudder_force_store = tk.DoubleVar()
+    angle_of_att_store = tk.DoubleVar()
+    side_slip_angle_store = tk.DoubleVar()
+    laser_alt_store = tk.DoubleVar()
+    display_variables_store = [left_ail_angle_store,
+                               right_ail_angle_store,
+                               rud_angle_store,
+                               ele_angle_store,
+                               roll_angle_store,
+                               pitch_angle_store,
+                               yaw_angle_store,
+                               yoke_force_store,
+                               rudder_force_store,
+                               angle_of_att_store,
+                               side_slip_angle_store,
+                               laser_alt_store]
+
+    label_names = ["left_ail_store",
+                   "right_ail_store",
+                   "rud_store",
+                   "ele_store",
+                   "roll_store",
+                   "pitch_store",
+                   "yaw_store",
+                   "yoke_store",
+                   "rudder_store",
+                   "angle_store",
+                   "slip_store",
+                   "laser_store"]
+
+    Listbox_display = ["Left Aileron Deflection ",
+                       "Right Aileron Deflection",
+                       "Rudder Deflection       ",
+                       "Elevator Deflection     ",
+                       "Roll                    ",
+                       "Pitch                   ",
+                       "Yaw                     ",
+                       "Yoke Force              ",
+                       "Rudder Force            ",
+                       "Angle of Attack         ",
+                       "Angle of Side Slip      ",
+                       "Laser Altitude          "]
+
+    current_time = tk.StringVar()
+
+    create_data_display = display(main)
+    main.mainloop()
