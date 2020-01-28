@@ -1,0 +1,15 @@
+import serial as sl
+
+ser = sl.Serial(port = '/dev/ttyUSB0', baudrate=9600, bytesize = sl.EIGHTBITS, parity = sl.PARITY_NONE, stopbits = sl.STOPBITS_ONE)
+line = "test"
+string = "Reading: "
+
+while 1:
+  for i in range(0,10):
+    line = str(ser.read())
+    r = line.split("'")
+    if (str(line[2]) != "\\"):
+      string = string + str(line[2])
+    print(string)
+    sring = "Reading: "
+    line = "N/A"
